@@ -4,10 +4,13 @@
 extern crate rocket;
 #[macro_use] extern crate rocket_contrib;
 #[macro_use] extern crate serde_derive;
+extern crate rocket_cors;
 
 use rocket_contrib::{Json, Value};
+use rocket_cors::{AllowedOrigins, Cors};
 use std::collections::HashMap;
 use rocket::State;
+use rocket::http::Method;
 use std::sync::RwLock;
 
 #[get("/")]
@@ -44,14 +47,19 @@ fn delete(id: i32, storage: State<Storage>) -> Json<Value> {
 }
 
 fn main() {
+    let (allowed_origins, _) = AllowedOrigins::some(&["*"]);
+    let cors = Cors {
+        allowed_origins: allowed_origins,
+        allowed_methods: vec![Method::Get, Method::Post, Method::Delete, Method::Put].into_iter().map(From::from).collect(),
+        allow_credentials: true,
+        ..Default::default()
+    };
+
     rocket::ignite()
         .manage(Storage::init())
+        .attach(cors)
         .mount("/", routes![get_all, create, update, delete]).launch();
 }
-
-// struct StorageState {
-//     storage: Arc<Storage
-// }
 
 struct Storage {
     users: RwLock<HashMap<i32, UserDto>>
