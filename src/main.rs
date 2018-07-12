@@ -47,7 +47,7 @@ fn delete(id: i32, storage: State<Storage>) -> Json<Value> {
 }
 
 fn main() {
-    let (allowed_origins, _) = AllowedOrigins::some(&["*"]);
+    let allowed_origins = AllowedOrigins::all();
     let cors = Cors {
         allowed_origins: allowed_origins,
         allowed_methods: vec![Method::Get, Method::Post, Method::Delete, Method::Put].into_iter().map(From::from).collect(),
