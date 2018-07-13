@@ -28,7 +28,7 @@ fn main() {
     rocket::ignite()
         .manage(Storage::init())
         .attach(cors)
-        .mount("/", routes![get_all, create, update, delete]).launch();
+        .mount("/", routes![get_all, create, update, delete, states]).launch();
 }
 
 // ENDPOINTS/ROUTES
@@ -64,6 +64,28 @@ fn delete(id: i32, storage: State<Storage>) -> Json<Value> {
     Json(json!({
         "success": true
     }))
+}
+
+#[get("/states")]
+fn states(storage: State<Storage>) -> Json<Vec<StateUserCount>> {
+    let states = storage.users.read().unwrap().iter()
+        .map(|(_, v)| v.address.state.clone())
+        .fold(HashMap::new(), |mut acc, s| {
+            let s = if s == "" { "Unknown".to_string() } else { s };
+            if acc.contains_key(&s) {
+                let current_count = acc[&s];
+                acc.insert(s, current_count + 1);
+            } else {
+                acc.insert(s, 1i32);
+            }
+            acc
+        })
+        .into_iter()
+        .map(|(k,v)| StateUserCount {
+            state: k,
+            user_count: v
+        }).collect();
+    Json(states)
 }
 
 // STORAGE
@@ -126,4 +148,11 @@ struct CreateUpdateUserDto {
     email: Option<String>,
     phone: Option<String>,
     address: AddressDto
+}
+
+#[derive(Serialize)]
+struct StateUserCount {
+    state: String,
+    #[serde(rename = "userCount")]
+    user_count: i32
 }
