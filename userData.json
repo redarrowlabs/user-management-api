@@ -1,0 +1,44 @@
+{
+    "1":
+    {
+        "id": 1,
+        "firstName": "Papa",
+        "lastName": "Bear",
+        "email": null,
+        "phone": null,
+        "address": {
+            "street": "",
+            "city": "",
+            "state": "",
+            "zip": ""
+        }
+    },
+    "2":
+    {
+        "id": 2,
+        "firstName": "Foo",
+        "lastName": "Bar",
+        "email": null,
+        "phone": null,
+        "address": {
+            "street": "",
+            "city": "",
+            "state": "",
+            "zip": ""
+        }
+    },
+    "3":
+    {
+        "id": 3,
+        "firstName": "Charlie",
+        "lastName": "Brown",
+        "email": "charlie.brown@thing.com",
+        "phone": "123-456-7890",
+        "address": {
+            "street": "1201 Water St",
+            "city": "Stevens Point",
+            "state": "WI",
+            "zip": "54481"
+        }
+    }
+}

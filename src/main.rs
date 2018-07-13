@@ -4,6 +4,7 @@
 extern crate rocket;
 #[macro_use] extern crate rocket_contrib;
 #[macro_use] extern crate serde_derive;
+extern crate serde_json;
 extern crate rocket_cors;
 
 use rocket_contrib::{Json, Value};
@@ -12,6 +13,25 @@ use std::collections::HashMap;
 use rocket::State;
 use rocket::http::Method;
 use std::sync::RwLock;
+
+const USERS_JSON: &'static str = include_str!("../userData.json");
+
+fn main() {
+    let allowed_origins = AllowedOrigins::all();
+    let cors = Cors {
+        allowed_origins: allowed_origins,
+        allowed_methods: vec![Method::Get, Method::Post, Method::Delete, Method::Put].into_iter().map(From::from).collect(),
+        allow_credentials: true,
+        ..Default::default()
+    };
+
+    rocket::ignite()
+        .manage(Storage::init())
+        .attach(cors)
+        .mount("/", routes![get_all, create, update, delete]).launch();
+}
+
+// ENDPOINTS/ROUTES
 
 #[get("/")]
 fn get_all(storage: State<Storage>) -> Json<Vec<UserDto>> {
@@ -46,20 +66,7 @@ fn delete(id: i32, storage: State<Storage>) -> Json<Value> {
     }))
 }
 
-fn main() {
-    let allowed_origins = AllowedOrigins::all();
-    let cors = Cors {
-        allowed_origins: allowed_origins,
-        allowed_methods: vec![Method::Get, Method::Post, Method::Delete, Method::Put].into_iter().map(From::from).collect(),
-        allow_credentials: true,
-        ..Default::default()
-    };
-
-    rocket::ignite()
-        .manage(Storage::init())
-        .attach(cors)
-        .mount("/", routes![get_all, create, update, delete]).launch();
-}
+// STORAGE
 
 struct Storage {
     users: RwLock<HashMap<i32, UserDto>>
@@ -67,41 +74,25 @@ struct Storage {
 
 impl Storage {
     fn init() -> Storage {
-        let mut users = HashMap::new();
-        users.insert(1,
-            UserDto {
-                id: 1,
-                first_name: "Foo".to_string(),
-                last_name: "Bar".to_string(),
-                email: None,
-                phone: None
-            }
-        );
-        users.insert(2,
-            UserDto {
-                id: 2,
-                first_name: "Charlie".to_string(),
-                last_name: "Brown".to_string(),
-                email: Some("charlie.brown@thing.com".to_string()),
-                phone: Some("123-456-7890".to_string())
-            }
-        );
-        users.insert(3,
-            UserDto {
-                id: 3,
-                first_name: "Papa".to_string(),
-                last_name: "Bear".to_string(),
-                email: None,
-                phone: None
-            }
-        );
+        let users = serde_json::from_str(USERS_JSON).expect("invalid json in userData.json");
+
         Storage {
             users: RwLock::new(users)
         }
     }
 }
 
-#[derive(Serialize, Clone)]
+// CONTRACTS
+
+#[derive(Serialize, Deserialize, Clone)]
+struct AddressDto {
+    street: String,
+    city: String,
+    state: String,
+    zip: String
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 struct UserDto {
     id: i32,
     #[serde(rename = "firstName")]
@@ -109,7 +100,8 @@ struct UserDto {
     #[serde(rename = "lastName")]
     last_name: String,
     email: Option<String>,
-    phone: Option<String>
+    phone: Option<String>,
+    address: AddressDto
 }
 
 impl UserDto {
@@ -119,7 +111,8 @@ impl UserDto {
             first_name: other.first_name.clone(),
             last_name: other.last_name.clone(),
             email: other.email.clone(),
-            phone: other.phone.clone()
+            phone: other.phone.clone(),
+            address: other.address.clone()
         }
     }
 }
@@ -131,5 +124,6 @@ struct CreateUpdateUserDto {
     #[serde(rename = "lastName")]
     last_name: String,
     email: Option<String>,
-    phone: Option<String>
+    phone: Option<String>,
+    address: AddressDto
 }
